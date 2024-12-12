@@ -1,0 +1,22 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azure-files-rabbitmq
+provisioner: file.csi.azure.com
+allowVolumeExpansion: true
+parameters:
+  skuName: Premium_LRS
+  storageaccounttype: Premium_LRS
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rabbitmq-pvc
+  namespace: rabbitmq
+spec:
+  accessModes:
+    - ReadWriteOnce  # Change to ReadWriteMany if you want multiple pods to access the same volume
+  storageClassName: azure-files-rabbitmq
+  resources:
+    requests:
+      storage: {{ .Values.storageQuota | toString }}Gi

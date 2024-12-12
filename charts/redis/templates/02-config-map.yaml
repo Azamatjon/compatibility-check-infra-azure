@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: redis
+data:
+  redis.conf: |
+    # Require clients to issue AUTH <PASSWORD> before processing any other commands.
+    requirepass {{ .Values.password }}
+
+    # Additional Redis configurations can be added here
+    # Set Redis to run as a daemon (background process)
+    # daemonize no
+
+    # Specify the address Redis should bind to
+    # bind 0.0.0.0
+
+    # Set the maximum memory Redis can use
+    # maxmemory 256mb
+
+    # Set Redis to act as a persistent store
+    # appendonly yes
+
+    # Your custom configurations can go here

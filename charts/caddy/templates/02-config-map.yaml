@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config
+  namespace: caddy
+data:
+  Caddyfile: |
+    {
+      email {{ .Values.email }}
+    }
+
+    {{- $corsDomain := .Values.corsDomain }}
+    {{- range .Values.domains }}
+    {{ .name }} {
+      {{- if hasPrefix "api." .name }}
+      reverse_proxy {{ .localAddress }}
+
+      handle {
+        request_body {
+          max_size 100MB
+        }
+
+        reverse_proxy {{ .localAddress }}
+      }
+      {{- else if hasPrefix "cdn." .name }}
+      @options {
+        method OPTIONS
+      }
+      handle @options {
+        respond "" 204
+      }
+
+      header {
+        Access-Control-Allow-Origin "https://{{ $corsDomain }}"
+        Access-Control-Allow-Methods "GET, OPTIONS"
+        Access-Control-Allow-Headers "Content-Type, Authorization"
+        Access-Control-Allow-Credentials true
+        Access-Control-Max-Age 86400
+      }
+
+      reverse_proxy {{ .localAddress }}
+      {{- else if hasPrefix "ws." .name }}
+      route /ping {
+        reverse_proxy {{ .localAddress }}
+      }
+
+      @websockets {
+        header Connection Upgrade
+        header Upgrade websocket
+      }
+
+      reverse_proxy @websockets {{ .localAddress }} {
+        header_up -Origin
+      }
+      {{- else }}
+      reverse_proxy {{ .localAddress }}
+      {{- end }}
+    }
+    {{- end }}

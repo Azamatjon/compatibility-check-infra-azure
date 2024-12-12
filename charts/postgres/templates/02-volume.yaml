@@ -1,0 +1,21 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azure-disk-postgres
+provisioner: kubernetes.io/azure-disk
+allowVolumeExpansion: true
+parameters:
+  skuName: Premium_LRS
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: azure-disk-postgres
+  resources:
+    requests:
+      storage: {{ .Values.storageQuota | toString }}Gi

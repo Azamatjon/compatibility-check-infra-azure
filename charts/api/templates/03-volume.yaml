@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: azure-file-pv-api
+  namespace: api
+spec:
+  capacity:
+    storage: {{ .Values.storageQuota | toString }}Gi
+  accessModes:
+    - ReadWriteMany
+  azureFile:
+    secretName: azure-storage-secret
+    shareName: {{ .Values.fileshareName | quote }}
+    readOnly: false
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: azurefile
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: azure-file-pvc
+  namespace: api
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: azurefile
+  resources:
+    requests:
+      storage: {{ .Values.storageQuota | toString }}Gi

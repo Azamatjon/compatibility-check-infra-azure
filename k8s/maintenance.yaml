@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: maintenance
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: azure-storage-secret
+  namespace: maintenance
+type: Opaque
+stringData:
+  azurestorageaccountname: "airoomiecheckstorage"
+  azurestorageaccountkey: "HTqD6MyubfE1C3SPiR7f6lql4tNNg/V3D1gHplb3rqpoUZQNRfuthOYAsYgOvXjT3PqCNY7Xsk7t+AStS4+V3w=="
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: azure-file-pv-maintenance
+  namespace: maintenance
+spec:
+  capacity:
+    storage: 30Gi
+  accessModes:
+    - ReadWriteMany
+  azureFile:
+    secretName: azure-storage-secret
+    shareName: common
+    readOnly: false
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: azurefile
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: azure-file-pvc
+  namespace: maintenance
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: azurefile
+  resources:
+    requests:
+      storage: 30Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maintenance-deployment
+  namespace: maintenance
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: maintenance-app
+  template:
+    metadata:
+      labels:
+        app: maintenance-app
+    spec:
+      containers:
+        - name: maintenance-container
+          image: rastasheep/ubuntu-sshd:latest  # Use the pre-built SSH image
+          ports:
+            - containerPort: 22
+          volumeMounts:
+            - mountPath: /data
+              name: storage-volume
+      volumes:
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: azure-file-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: maintenance-service
+  namespace: maintenance
+spec:
+  type: LoadBalancer  # Change to LoadBalancer
+  ports:
+    - port: 22
+      targetPort: 22
+  selector:
+    app: maintenance-app
+---
+# Postgres Maintenance
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres2-service
+  namespace: postgres
+spec:
+  type: LoadBalancer  # Change to LoadBalancer
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: postgres

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-service
+  namespace: rabbitmq
+spec:
+  ports:
+    - name: amqp
+      port: {{ .Values.port }}
+    - name: management
+      port: {{ .Values.managementPort }}
+  selector:
+    app: rabbitmq
+  type: ClusterIP

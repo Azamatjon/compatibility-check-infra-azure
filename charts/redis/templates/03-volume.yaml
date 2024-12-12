@@ -1,0 +1,21 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azure-disk-redis
+provisioner: kubernetes.io/azure-disk
+allowVolumeExpansion: true
+parameters:
+  skuName: Standard_LRS
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: redis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: azure-disk-redis
+  resources:
+    requests:
+      storage: {{ .Values.storageQuota | toString }}Gi
